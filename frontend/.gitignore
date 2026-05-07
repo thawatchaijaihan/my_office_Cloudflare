@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.jaihan-assistant
+
+# Google service account keys (never commit)
+jaihan-assistant-*.json
+jaihan-assistant-b98271495e18.json
+service-account*.json
+
+# Local tools/binaries (e.g., cloudflared)
+tools/
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+secrets/

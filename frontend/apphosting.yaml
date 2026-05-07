@@ -1,0 +1,123 @@
+# Firebase App Hosting configuration
+# Safe to commit: secrets are stored in Cloud Secret Manager.
+
+runConfig:
+  # minInstances: 1 = มี instance รันค้างไว้ ลด cold start (มีค่าใช้จ่ายเพิ่ม ถ้าไม่ต้องการตั้งกลับเป็น 0)
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # Google Gemini
+  - variable: GEMINI_API_KEY
+    secret: geminiApiKey
+    availability:
+      - RUNTIME
+  - variable: GEMINI_MODEL
+    value: gemini-2.5-flash-lite
+    availability:
+      - RUNTIME
+
+  # Firebase Auth (Google sign-in) สำหรับแดชบอร์ด
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyAR05w30yK5F4MtVjsez4SyMXXZ6fAhQwg"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "jaihan-assistant.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "jaihan-assistant"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:179210405463:web:7424a400a705c3e5a60512"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: ADMIN_API_KEY
+    secret: adminApiKey
+    availability:
+      - RUNTIME
+  - variable: DASHBOARD_PING_CRON_SECRET
+    secret: dashboardPingCronSecret
+    availability:
+      - RUNTIME
+  # Realtime Database URL (optional) สำหรับ allowlist อีเมล/UID แดชบอร์ด
+  - variable: FIREBASE_DATABASE_URL
+    secret: firebaseDatabaseUrl
+    availability:
+      - RUNTIME
+  # Admin / Google Sheets (Pass system)
+  - variable: GOOGLE_SERVICE_ACCOUNT_KEY_BASE64
+    secret: googleServiceAccountKeyBase64
+    availability:
+      - RUNTIME
+  - variable: GOOGLE_SHEETS_ID
+    secret: googleSheetsId
+    availability:
+      - RUNTIME
+  - variable: INDEX_SHEET_GID
+    value: "1143152346"
+    availability:
+      - RUNTIME
+  # SLIP sheet removed - no longer exists
+  - variable: PHONE_SHEET_GID
+    value: "908533993"
+    availability:
+      - RUNTIME
+  - variable: PERSONNEL_SHEET_GID
+    value: "908533993"
+    availability:
+      - RUNTIME
+  - variable: ADMIN_TELEGRAM_USER_IDS
+    secret: adminTelegramUserIds
+    availability:
+      - RUNTIME
+  - variable: TELEGRAM_BOT_TOKEN
+    secret: telegramBotToken
+    availability:
+      - RUNTIME
+  - variable: TELEGRAM_DASHBOARD_URL
+    value: "https://jaihan-assistant--jaihan-assistant.asia-southeast1.hosted.app/dashboard"
+    availability:
+      - RUNTIME
+  # แผนที่ติดตั้งกล้องวงจรปิด (embed ในแดชบอร์ด)
+  - variable: NEXT_PUBLIC_CCTV_MAP_URL
+    value: "https://jaihan-assistant--jaihan-assistant.asia-southeast1.hosted.app/cctv-map"
+    availability:
+      - BUILD
+      - RUNTIME
+  # Google Maps API Key สำหรับ map-cctv
+  - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    secret: googleMapsApiKey
+    availability:
+      - BUILD
+      - RUNTIME
+  # Firebase Storage Bucket
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "jaihan-assistant.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "179210405463"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_DATABASE_URL
+    value: "https://jaihan-assistant.asia-southeast1.firebasedatabase.app"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_DASHBOARD_APPROVER_EMAIL
+    value: "thawatchaijaihan@gmail.com"
+    availability:
+      - BUILD
+      - RUNTIME
