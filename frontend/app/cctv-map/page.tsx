@@ -1,6 +1,7 @@
 import CctvMap from "./components/CctvMap";
  
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export const metadata = {
   title: "แผนที่กล้อง CCTV",

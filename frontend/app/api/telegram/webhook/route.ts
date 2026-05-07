@@ -3,6 +3,8 @@ import { handleTelegramUpdate } from "@/lib/telegram/handleTelegram";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { logger } from "@/lib/logger";
 
+export const runtime = "edge";
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   if (!checkRateLimit(ip)) {

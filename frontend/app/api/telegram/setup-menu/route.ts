@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { setTelegramMenuButtonToDefault, setTelegramCommands } from "@/lib/telegram";
 
+export const runtime = "edge";
+
 /**
  * POST /api/telegram/setup-menu
  * ลบเมนูปุ่ม custom + ตั้งค่ารายการคำสั่งของ Telegram Bot

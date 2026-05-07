@@ -1,6 +1,7 @@
 import LoginForm from "./LoginForm";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export const metadata = {
   title: "เข้าสู่ระบบ - Assistant Admin",
