@@ -141,7 +141,9 @@ app.get('/api/files/:filename', async (c) => {
   file.writeHttpMetadata(headers);
   headers.set('etag', file.httpEtag);
 
-  return c.body(file.body, 200, { headers });
+  return new Response(file.body, {
+    headers,
+  });
 });
 
 export default app;
