@@ -32,22 +32,10 @@ const nextConfig = {
         source: "/map-cctv",
         destination: "/cctv-map",
       },
-      // Proxy API calls to Go backend
+      // Proxy API calls to Cloudflare Worker backend
       {
-        source: "/api/ping",
-        destination: "http://server:8080/api/ping",
-      },
-      {
-        source: "/api/search",
-        destination: "http://server:8080/api/search",
-      },
-      {
-        source: "/api/dashboard/:path*",
-        destination: "http://server:8080/api/dashboard/:path*",
-      },
-      {
-        source: "/api/admin/:path*",
-        destination: "http://server:8080/api/admin/:path*",
+        source: "/api/:path*",
+        destination: "https://my-office-backend.thawatchaijaihan.workers.dev/api/:path*",
       },
     ];
   },
