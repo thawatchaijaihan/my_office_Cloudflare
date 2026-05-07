@@ -1,0 +1,18 @@
+name = "my-office-backend"
+main = "src/index.ts"
+compatibility_date = "2024-05-07"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "my-office-db"
+database_id = "YOUR_D1_DATABASE_ID_HERE"
+
+# R2 Storage Binding (for uploads)
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "my-office-uploads"
+
+[vars]
+# Add other environment variables here
+# ADMIN_API_KEY = "..."
