@@ -1,9 +1,12 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { getGoogleAccessToken, syncPersonnel } from './googleSheets';
 
 type Bindings = {
   DB: D1Database;
   BUCKET: R2Bucket;
+  GOOGLE_SERVICE_ACCOUNT_JSON: string;
+  GOOGLE_SHEETS_ID: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -111,7 +114,23 @@ app.post('/api/cameras', async (c) => {
   }
 });
 
-// 7. File Upload (using R2)
+// 7. Sync from Google Sheets
+app.post('/api/admin/sync-personnel', async (c) => {
+  try {
+    const serviceAccount = JSON.parse(c.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    const token = await getGoogleAccessToken(serviceAccount);
+    const count = await syncPersonnel(c.env.DB, token, c.env.GOOGLE_SHEETS_ID);
+    
+    return c.json({ 
+      status: 'success', 
+      message: `Synced ${count} personnel records successfully` 
+    });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// 8. File Upload (using R2)
 app.post('/api/upload', async (c) => {
   const body = await c.req.parseBody();
   const file = body['file'] as File;
