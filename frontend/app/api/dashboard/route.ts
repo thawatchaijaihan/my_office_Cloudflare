@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
     const breakdownResult = await db.prepare(`
       SELECT status_n as label, COUNT(*) as count 
       FROM pass_requests 
+      WHERE COALESCE(status_m, '') NOT LIKE '%ลบข้อมูล%' 
+        AND COALESCE(status_n, '') NOT LIKE '%ลบข้อมูล%'
       GROUP BY status_n
     `).all();
 
@@ -36,6 +38,8 @@ export async function GET(request: NextRequest) {
       SELECT first_name || ' ' || last_name as name, 'ค้างชำระ' as title, COUNT(*) as count
       FROM pass_requests
       WHERE status_m LIKE '%ค้างชำระ%'
+        AND COALESCE(status_m, '') NOT LIKE '%ลบข้อมูล%' 
+        AND COALESCE(status_n, '') NOT LIKE '%ลบข้อมูล%'
       GROUP BY first_name, last_name
       ORDER BY count DESC
       LIMIT 10
@@ -46,6 +50,8 @@ export async function GET(request: NextRequest) {
       SELECT id as rowNumber, timestamp as registeredAt, first_name || ' ' || last_name as name, 
              relation as requestFor, plate
       FROM pass_requests
+      WHERE COALESCE(status_m, '') NOT LIKE '%ลบข้อมูล%' 
+        AND COALESCE(status_n, '') NOT LIKE '%ลบข้อมูล%'
       ORDER BY timestamp DESC
       LIMIT 10
     `).all();
