@@ -205,8 +205,21 @@ export async function POST(request: NextRequest) {
     
     let countPersonnel = 0;
     let personnelError = null;
+    let debugHeaders = null;
     try {
       const personnelSheetId = env.PERSONNEL_SHEET_ID || env.GOOGLE_SHEETS_ID_PERSONNEL || env.GOOGLE_SHEETS_ID;
+      
+      // Temporary debug logic
+      const serviceAccount = JSON.parse(atob(env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64));
+      const token = await getGoogleAccessToken(serviceAccount);
+      const tabs = await listSpreadsheetTabs(token, personnelSheetId);
+      const possibleNames = ["ข้อมูลกำลังพล", "รายชื่อกำลังพล", "กำลังพล", "Personnel", "personnel", "ชีต1", "Sheet1"];
+      let sheetName = tabs.find((t: any) => possibleNames.includes(t.properties.title))?.properties?.title;
+      if (!sheetName) sheetName = tabs.find((t: any) => t.properties.title.includes("กำลังพล"))?.properties?.title || "ข้อมูลกำลังพล";
+      
+      const values = await readSheetValues(token, personnelSheetId, `'${sheetName}'!A1:R5`);
+      debugHeaders = { sheetName, row1: values[0], row2: values[1], totalRows: values.length };
+
       countPersonnel = await syncPersonnel(env.DB, token, personnelSheetId);
     } catch (e: any) {
       personnelError = e.message;
@@ -225,6 +238,7 @@ export async function POST(request: NextRequest) {
       status: 'success', 
       message: `Synced ${countPersonnel} personnel records and ${countRequests} pass requests successfully`,
       personnelError,
+      debugHeaders
     });
   } catch (e: any) {
     console.error("[Sync API] Error:", e);
