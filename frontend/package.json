@@ -15,7 +15,7 @@
     "sync-personnel": "node scripts/sync-personnel.mjs",
     "pages:build": "npx @cloudflare/next-on-pages",
     "preview:local": "npm run build && npm run pages:build && npx wrangler pages dev .vercel/output/static --d1 DB=jaihan-db --persist-to ./local_db",
-    "db:setup:local": "npx wrangler d1 execute DB --local --file=../schema.sql --persist-to ./local_db"
+    "db:setup:local": "npx wrangler d1 execute jaihan-db --local --file=../schema.sql --persist-to ./local_db"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
