@@ -16,7 +16,11 @@ export function useDashboardFetch() {
           ? new URLSearchParams(window.location.search).get("key") ?? ""
           : "";
       const sep = path.includes("?") ? "&" : "?";
-      const url = path + (key ? `${sep}key=${encodeURIComponent(key)}` : "");
+      
+      // Proxy all dashboard API calls to the backend worker
+      const baseUrl = path.startsWith("/api") ? "https://api.capt-th.work" : "";
+      const url = baseUrl + path + (key ? `${sep}key=${encodeURIComponent(key)}` : "");
+      
       const authHeaders = await getAuthHeaders();
       const headers = { ...authHeaders, ...(options.headers as Record<string, string>) };
       return fetch(url, { ...options, headers });

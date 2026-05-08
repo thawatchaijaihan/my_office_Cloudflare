@@ -131,7 +131,7 @@ export default function CameraInfoOverlay({
                         formData.append("file", blob, "camera-check.jpg");
 
                         const authHeaders = await getAuthHeaders();
-                        const uploadRes = await fetch("/api/upload", {
+                        const uploadRes = await fetch("https://api.capt-th.work/api/upload", {
                           method: "POST",
                           headers: { ...authHeaders },
                           body: formData,

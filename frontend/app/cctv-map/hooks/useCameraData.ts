@@ -39,7 +39,7 @@ export function useCameraData({ searchTerm, activeTypes }: UseCameraDataOptions)
 
         const fetchCameras = async () => {
             try {
-                const res = await fetch("/api/dashboard/cameras");
+                const res = await fetch("https://api.capt-th.work/api/dashboard/cameras");
                 if (!res.ok) throw new Error("Failed to fetch cameras");
                 const list = await res.json() as CameraWithCheck[];
                 
@@ -95,7 +95,7 @@ export function useCameraData({ searchTerm, activeTypes }: UseCameraDataOptions)
     const updateCamera = useCallback(
         async (id: string, updates: Partial<CameraWithCheck>) => {
             try {
-                const res = await fetch("/api/dashboard/cameras", {
+                const res = await fetch("https://api.capt-th.work/api/dashboard/cameras", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id: Number(id), ...updates }),

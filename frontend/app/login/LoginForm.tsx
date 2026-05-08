@@ -18,7 +18,7 @@ export default function LoginForm() {
     
     try {
       // We'll try to fetch a protected resource to verify the key
-      const res = await fetch("/api/ping", {
+      const res = await fetch("https://api.capt-th.work/api/ping", {
         headers: { "X-Admin-Key": password },
       });
       
