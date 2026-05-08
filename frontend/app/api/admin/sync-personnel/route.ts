@@ -125,9 +125,24 @@ async function syncPersonnel(db: any, token: string, spreadsheetId: string) {
   return count;
 }
 
-async function syncPassRequests(db: any, token: string, spreadsheetId: string) {
-  // Use index sheet name instead of GID for simplicity, or we can use the default "index" if it's named index
-  const values = await readSheetValues(token, spreadsheetId, "index!A2:P");
+async function listSpreadsheetTabs(token: string, spreadsheetId: string) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const data: any = await response.json();
+  return data.sheets || [];
+}
+
+async function syncPassRequests(db: any, token: string, spreadsheetId: string, indexSheetGid?: string) {
+  let sheetName = "index";
+  if (indexSheetGid) {
+    const tabs = await listSpreadsheetTabs(token, spreadsheetId);
+    const tab = tabs.find((t: any) => String(t.properties.sheetId) === String(indexSheetGid));
+    if (tab && tab.properties.title) {
+      sheetName = tab.properties.title;
+    }
+  }
+
+  const values = await readSheetValues(token, spreadsheetId, `'${sheetName}'!A2:P`);
   if (!values || values.length === 0) return 0;
 
   // Clear existing to avoid duplicates
@@ -151,11 +166,8 @@ async function syncPassRequests(db: any, token: string, spreadsheetId: string) {
     const statusM = getCell(r, 12);
     const statusN = getCell(r, 13);
     
-    // Parse paid amount if needed
     let paidAmount = 0;
-    if (statusM === 'ชำระแล้ว') {
-      paidAmount = 100; // default assumption based on old code
-    }
+    if (statusM === 'ชำระแล้ว') paidAmount = 100;
 
     await db.prepare(`
       INSERT INTO pass_requests (
@@ -186,7 +198,9 @@ export async function POST(request: NextRequest) {
     const countPersonnel = await syncPersonnel(env.DB, token, env.GOOGLE_SHEETS_ID);
     let countRequests = 0;
     try {
-      countRequests = await syncPassRequests(env.DB, token, env.GOOGLE_SHEETS_ID);
+      // Fallback to "1143152346" if not provided in env
+      const indexGid = env.INDEX_SHEET_GID || "1143152346";
+      countRequests = await syncPassRequests(env.DB, token, env.GOOGLE_SHEETS_ID, indexGid);
     } catch (e: any) {
       console.error("[Sync API] pass_requests sync failed, maybe sheet name is wrong:", e);
       // We don't fail the whole request if pass_requests fails
