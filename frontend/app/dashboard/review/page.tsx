@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardFetch } from "../useDashboardFetch";
 
 type IndexTableRow = {
@@ -97,7 +97,10 @@ export default function ReviewPage() {
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const lastSavedPayloadRef = useRef<string>("");
 
-  useEffect(() => {
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const fetchData = useCallback(() => {
+    setLoading(true);
     dashboardFetch("/api/dashboard/review")
       .then((res) => {
         if (!res.ok) throw new Error(res.status === 401 ? "กรุณาใส่ key ใน URL" : "โหลดไม่สำเร็จ");
@@ -107,6 +110,10 @@ export default function ReviewPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [dashboardFetch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // โหลดค่าที่บันทึกไว้จาก Realtime DB (ลำดับคอลัมน์ / การแสดงคอลัมน์ / ตัวกรอง)
   useEffect(() => {
@@ -411,6 +418,22 @@ export default function ReviewPage() {
     });
   };
 
+  const handleSync = async () => {
+    if (isSyncing) return;
+    try {
+      setIsSyncing(true);
+      const res = await dashboardFetch("/api/admin/sync-personnel", { method: "POST" });
+      if (!res.ok) throw new Error("Sync failed");
+      
+      // Refresh data
+      fetchData();
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6 md:p-8" style={{ backgroundColor: "#f1f5f9", minHeight: "100vh" }}>
@@ -573,6 +596,25 @@ export default function ReviewPage() {
               </div>
             )}
           </div>
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              isSyncing 
+                ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200" 
+                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+            }`}
+          >
+            <svg 
+              className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {isSyncing ? "กำลังซิงค์..." : "ซิงค์ข้อมูล"}
+          </button>
         </div>
       </div>
 
