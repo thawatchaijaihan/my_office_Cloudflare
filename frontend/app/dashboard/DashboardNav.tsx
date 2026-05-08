@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useDashboardAuth } from "./DashboardAuthContext";
 import { NAV_ITEMS, type NavItem } from "./navData";
+import { useDashboardFetch } from "./useDashboardFetch";
+import { useState } from "react";
 
 const APPROVER_EMAIL = (process.env.NEXT_PUBLIC_DASHBOARD_APPROVER_EMAIL ?? "").trim().toLowerCase();
 
@@ -67,7 +69,11 @@ function NavIcon({ icon }: { icon: NavItem["icon"] }) {
 export default function DashboardNav() {
   const pathname = usePathname();
   const { user } = useDashboardAuth();
+  const dashboardFetch = useDashboardFetch();
   const isApprover = APPROVER_EMAIL && user?.email?.toLowerCase() === APPROVER_EMAIL;
+  
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const visibleItems = NAV_ITEMS;
 
@@ -155,6 +161,49 @@ export default function DashboardNav() {
           </section>
         ))}
       </div>
+
+      {/* Sync Button at Bottom */}
+      <div className="mt-6 pt-6 border-t border-slate-700/50 px-3">
+        <button
+          onClick={async () => {
+            if (isSyncing) return;
+            try {
+              setIsSyncing(true);
+              const res = await dashboardFetch("/api/admin/sync-personnel", { method: "POST" });
+              if (!res.ok) throw new Error("Sync failed");
+              setShowToast(true);
+              setTimeout(() => setShowToast(false), 3000);
+              // We don't have an easy way to refresh the child page's internal state here,
+              // but we can trigger a hard refresh if we really want, or just rely on the toast.
+              // For now, let's just show the toast.
+            } catch (e: any) {
+              alert("Error: " + e.message);
+            } finally {
+              setIsSyncing(false);
+            }
+          }}
+          disabled={isSyncing}
+          className={`w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
+            isSyncing
+              ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+              : "text-emerald-400 hover:bg-slate-700/50 hover:text-emerald-300 border border-emerald-900/30"
+          }`}
+        >
+          <svg className={`w-5 h-5 ${isSyncing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>{isSyncing ? "กำลังซิงค์..." : "ซิงค์ข้อมูลจาก Sheets"}</span>
+        </button>
+      </div>
+
+      {/* Mini Toast */}
+      {showToast && (
+        <div className="fixed bottom-6 left-6 z-[60] animate-bounce">
+          <div className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-xl text-xs font-medium border border-emerald-500">
+            ซิงค์ข้อมูลสำเร็จ! ✨
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
