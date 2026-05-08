@@ -81,8 +81,16 @@ function getCell(row: string[], idx: number): string {
 }
 
 async function syncPersonnel(db: any, token: string, spreadsheetId: string) {
-  const values = await readSheetValues(token, spreadsheetId, "'ข้อมูลกำลังพล'!A:R");
-  if (!values || values.length === 0) return 0;
+  const tabs = await listSpreadsheetTabs(token, spreadsheetId);
+  const possibleNames = ["ข้อมูลกำลังพล", "รายชื่อกำลังพล", "กำลังพล", "Personnel", "personnel"];
+  let sheetName = tabs.find((t: any) => possibleNames.includes(t.properties.title))?.properties?.title;
+  
+  if (!sheetName) {
+    sheetName = tabs.find((t: any) => t.properties.title.includes("กำลังพล"))?.properties?.title || "ข้อมูลกำลังพล";
+  }
+
+  const values = await readSheetValues(token, spreadsheetId, `'${sheetName}'!A:R`);
+  if (!values || values.length === 0) throw new Error(`Personnel sheet '${sheetName}' is empty or missing`);
 
   let start = 0;
   if (values.length > 0) {
@@ -195,15 +203,20 @@ export async function POST(request: NextRequest) {
     const serviceAccount = JSON.parse(atob(env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64));
     const token = await getGoogleAccessToken(serviceAccount);
     
-    const countPersonnel = await syncPersonnel(env.DB, token, env.GOOGLE_SHEETS_ID);
+    let countPersonnel = 0;
+    try {
+      const personnelSheetId = env.PERSONNEL_SHEET_ID || env.GOOGLE_SHEETS_ID_PERSONNEL || env.GOOGLE_SHEETS_ID;
+      countPersonnel = await syncPersonnel(env.DB, token, personnelSheetId);
+    } catch (e: any) {
+      console.error("[Sync API] personnel sync failed:", e);
+    }
+
     let countRequests = 0;
     try {
-      // Fallback to "1143152346" if not provided in env
       const indexGid = env.INDEX_SHEET_GID || "1143152346";
       countRequests = await syncPassRequests(env.DB, token, env.GOOGLE_SHEETS_ID, indexGid);
     } catch (e: any) {
-      console.error("[Sync API] pass_requests sync failed, maybe sheet name is wrong:", e);
-      // We don't fail the whole request if pass_requests fails
+      console.error("[Sync API] pass_requests sync failed:", e);
     }
     
     return NextResponse.json({ 
