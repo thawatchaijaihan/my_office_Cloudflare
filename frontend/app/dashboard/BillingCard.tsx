@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
@@ -64,7 +64,7 @@ export default function BillingCard({
 
     return [
       {
-        name: "ไม่มีค่าใช้จ่าย",
+        name: "ไม่มีรายได้",
         value: 1,
         color: "#cbd5e1",
       },
@@ -77,8 +77,8 @@ export default function BillingCard({
     <div className="rounded-xl bg-white border border-slate-200 p-4 sm:p-6 shadow-sm min-h-0 flex flex-col overflow-hidden">
       <div className="flex-1 w-full min-w-0 flex flex-row items-center gap-3 h-[220px] sm:h-[240px]">
         <div className="shrink-0 flex flex-col gap-1 items-center">
-          <div className="text-base sm:text-lg font-semibold text-slate-800 text-center">ค่าใช้จ่ายบริการ</div>
-          <ul className="flex flex-col gap-1.5 text-xs sm:text-sm justify-center items-center" aria-label="ค่าใช้จ่ายบริการ">
+          <div className="text-base sm:text-lg font-semibold text-slate-800 text-center">สรุปยอดรายได้</div>
+          <ul className="flex flex-col gap-1.5 text-xs sm:text-sm justify-center items-center" aria-label="สรุปยอดรายได้">
             {serviceChartData.map((entry) => (
               <li key={entry.name} className="flex items-center justify-center gap-2">
                 <span className="shrink-0 w-3 h-3 rounded-sm" style={{ backgroundColor: entry.color }} aria-hidden />

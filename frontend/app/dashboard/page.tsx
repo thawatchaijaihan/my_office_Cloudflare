@@ -226,7 +226,7 @@ export default function DashboardPage() {
     valueText?: string;
     tone?: "default" | "warning";
   }> = [
-    { key: "overview", title: "ภาพรวม", valueText: formatCurrency(billingTotal) },
+    { key: "overview", title: "สรุปยอดรายได้", valueText: formatCurrency(billingTotal) },
     { key: "review", title: "รายการทั้งหมด", count: data.summary.total },
     { key: "pending-check", title: "รายการรอตรวจ", count: data.summary.pendingReview },
     { key: "pending-send", title: "รายการรอนำส่ง", count: data.summary.pendingSend },
@@ -240,7 +240,7 @@ export default function DashboardPage() {
   ];
 
   const panelTitleMap: Record<DashboardPanelKey, string> = {
-    overview: "ภาพรวมแดชบอร์ด",
+    overview: "สรุปยอดรายได้",
     review: "รายการทั้งหมด",
     "pending-check": "รายการรอตรวจ",
     "pending-send": "รายการรอนำส่ง",
