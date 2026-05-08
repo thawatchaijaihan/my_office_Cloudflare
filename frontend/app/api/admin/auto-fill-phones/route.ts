@@ -177,12 +177,17 @@ export async function GET(request: NextRequest) {
       const key = `${firstName} ${lastName}`;
       const newPhone = phoneMap.get(key);
 
-      if (newPhone && currentPhone !== newPhone) {
+      // Check if currentPhone is essentially the same but missing the leading zero
+      // e.g., currentPhone is "812345678" and newPhone is "0812345678"
+      const currentClean = currentPhone.replace(/^'/, '').trim();
+      const needsUpdate = newPhone && (currentClean !== newPhone);
+
+      if (needsUpdate) {
         // Row index is i + 1
         const cellRange = `'${personnelSheetName}'!D${i + 1}`;
         updates.push({
           range: cellRange,
-          values: [[newPhone]]
+          values: [[`'${newPhone}`]]
         });
         updatedCount++;
       }

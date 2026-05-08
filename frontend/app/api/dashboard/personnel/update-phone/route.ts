@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     // Update the phone cell
     const cellRange = `'${sheetName}'!${phoneColLetter}${rowIndex}`;
-    await updateSheetValue(token, personnelSheetId, cellRange, newPhone || "");
+    await updateSheetValue(token, personnelSheetId, cellRange, `'${newPhone || ""}`);
 
     return NextResponse.json({ status: "success", message: "Updated successfully" });
   } catch (e: any) {
