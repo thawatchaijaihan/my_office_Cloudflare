@@ -33,7 +33,7 @@ export function personnelKeyByNameOnly(firstName: string, lastName: string): str
 export async function getPersonnelRagContext(query: string, options?: { maxDocs?: number }) {
   const maxDocs = options?.maxDocs || 20;
   try {
-    const url = `http://server:8080/api/admin/personnel/search?q=${encodeURIComponent(query)}`;
+    const url = `https://api.capt-th.work/api/admin/personnel/search?q=${encodeURIComponent(query)}`;
     const res = await fetch(url, {
       headers: {
         "X-Admin-Key": config.admin.apiKey || "",

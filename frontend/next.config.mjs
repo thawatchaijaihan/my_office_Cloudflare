@@ -35,7 +35,7 @@ const nextConfig = {
       // Proxy API calls to Cloudflare Worker backend
       {
         source: "/api/:path*",
-        destination: "https://my-office-backend.thawatchaijaihan.workers.dev/api/:path*",
+        destination: "https://api.capt-th.work/api/:path*",
       },
     ];
   },

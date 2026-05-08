@@ -1,11 +1,12 @@
 name = "my-office-backend"
 main = "src/index.ts"
 compatibility_date = "2024-05-07"
+workers_dev = true
 
-# Custom Domain (Optional: Uncomment and set your domain)
-# routes = [
-#   { pattern = "api.capt-th.work/*", custom_domain = true }
-# ]
+# Custom Domain
+routes = [
+  { pattern = "api.capt-th.work", custom_domain = true }
+]
 
 # D1 Database Binding
 [[d1_databases]]
