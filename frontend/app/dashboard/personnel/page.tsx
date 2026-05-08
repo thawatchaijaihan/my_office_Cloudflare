@@ -47,12 +47,12 @@ function matchSearch(row: PersonnelRow, q: string): boolean {
   return text.includes(lower);
 }
 
-function Toast({ show }: { show: boolean }) {
+function Toast({ show, message = "คัดลอกแล้ว" }: { show: boolean; message?: string }) {
   if (!show) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
       <div className="bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-pulse">
-        คัดลอกแล้ว
+        {message}
       </div>
     </div>
   );
@@ -94,11 +94,17 @@ function DetailModal({
   row,
   onClose,
   onCopy,
+  onUpdatePhone,
 }: {
   row: PersonnelRow;
   onClose: () => void;
   onCopy: () => void;
+  onUpdatePhone: (citizenId: string, newPhone: string) => Promise<void>;
 }) {
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [editPhoneValue, setEditPhoneValue] = useState(row.phone);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -106,6 +112,18 @@ function DetailModal({
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [onClose]);
+
+  const handleSavePhone = async () => {
+    try {
+      setIsSaving(true);
+      await onUpdatePhone(row.citizenId, editPhoneValue);
+      setIsEditingPhone(false);
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -126,7 +144,44 @@ function DetailModal({
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <CopyableCard value={row.phone} label="เบอร์โทร" onCopy={onCopy} />
+            <div className="flex flex-col">
+              <span className="text-xs text-slate-500 mb-0.5 flex justify-between items-center">
+                เบอร์โทร
+                {!isEditingPhone && (
+                  <button onClick={() => setIsEditingPhone(true)} className="text-emerald-600 hover:text-emerald-700 font-medium text-xs">
+                    แก้ไข
+                  </button>
+                )}
+              </span>
+              {isEditingPhone ? (
+                <div className="flex gap-2 items-center mt-1">
+                  <input 
+                    type="text" 
+                    value={editPhoneValue} 
+                    onChange={e => setEditPhoneValue(e.target.value)} 
+                    className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm focus:outline-none focus:border-emerald-500"
+                    placeholder="ระบุเบอร์โทร"
+                    disabled={isSaving}
+                  />
+                  <button 
+                    onClick={handleSavePhone}
+                    disabled={isSaving}
+                    className="bg-emerald-600 text-white px-2 py-1 rounded text-xs hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {isSaving ? "..." : "บันทึก"}
+                  </button>
+                  <button 
+                    onClick={() => { setIsEditingPhone(false); setEditPhoneValue(row.phone); }}
+                    disabled={isSaving}
+                    className="text-slate-500 hover:text-slate-700 text-xs px-1"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              ) : (
+                <CopyableCard value={row.phone} onCopy={onCopy} />
+              )}
+            </div>
             <CopyableCard value={row.bank} label="ธนาคาร" onCopy={onCopy} />
             <CopyableCard value={row.accountNumber} label="เลขบัญชี" onCopy={onCopy} />
             <CopyableCard value={row.citizenId} label="เลขประชาชน" onCopy={onCopy} />
@@ -163,6 +218,8 @@ export default function PersonnelPage() {
   const [showToast, setShowToast] = useState(false);
   const [selectedRow, setSelectedRow] = useState<PersonnelRow | null>(null);
 
+  const [toastMessage, setToastMessage] = useState("คัดลอกแล้ว");
+
   useEffect(() => {
     dashboardFetch("/api/dashboard/personnel")
       .then((res) => {
@@ -175,9 +232,29 @@ export default function PersonnelPage() {
   }, [dashboardFetch]);
 
   const handleCopy = useCallback(() => {
+    setToastMessage("คัดลอกแล้ว");
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
   }, []);
+
+  const handleUpdatePhone = async (citizenId: string, newPhone: string) => {
+    const res = await dashboardFetch("/api/dashboard/personnel/update-phone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ citizenId, newPhone }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Failed to update phone");
+    }
+    setRows(rows.map(r => r.citizenId === citizenId ? { ...r, phone: newPhone } : r));
+    if (selectedRow?.citizenId === citizenId) {
+      setSelectedRow({ ...selectedRow, phone: newPhone });
+    }
+    setToastMessage("บันทึกเบอร์โทรสำเร็จ");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   const filtered = search.trim()
     ? rows.filter((r) => matchSearch(r, search))
@@ -201,12 +278,13 @@ export default function PersonnelPage() {
 
   return (
     <div className="p-6 md:p-8" style={{ backgroundColor: "#f1f5f9", minHeight: "100vh" }}>
-      <Toast show={showToast} />
+      <Toast show={showToast} message={toastMessage} />
       {selectedRow && (
         <DetailModal
           row={selectedRow}
           onClose={() => setSelectedRow(null)}
           onCopy={handleCopy}
+          onUpdatePhone={handleUpdatePhone}
         />
       )}
       <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
