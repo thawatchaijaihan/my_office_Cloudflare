@@ -14,8 +14,8 @@
     "seed-dashboard-admins": "node scripts/seed-dashboard-admins.mjs",
     "sync-personnel": "node scripts/sync-personnel.mjs",
     "pages:build": "npx @cloudflare/next-on-pages",
-    "preview:local": "npm run build && npm run pages:build && npx wrangler pages dev .vercel/output/static --d1 DB",
-    "db:setup:local": "npx wrangler d1 execute DB --local --file=../schema.sql"
+    "preview:local": "npm run build && npm run pages:build && npx wrangler pages dev .vercel/output/static --d1 DB --persist-to ./.wrangler/state",
+    "db:setup:local": "npx wrangler d1 execute DB --local --file=../schema.sql --persist-to ./.wrangler/state"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
