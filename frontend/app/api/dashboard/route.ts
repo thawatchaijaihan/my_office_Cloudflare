@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const summaryStmt = await db.prepare(`
       SELECT 
         COUNT(*) as total,
-        SUM(CASE WHEN status_m = 'ชำระแล้ว' THEN 1 ELSE 0 END) as paid,
-        SUM(CASE WHEN status_m LIKE '%ค้างชำระ%' THEN 1 ELSE 0 END) as outstanding,
+        SUM(CASE WHEN status_m LIKE '%ชำระ%' AND status_m NOT LIKE '%ค้าง%' THEN 1 ELSE 0 END) as paid,
+        SUM(CASE WHEN status_m LIKE '%ค้าง%' THEN 1 ELSE 0 END) as outstanding,
         SUM(CASE WHEN status_n = 'ข้อมูลไม่ถูกต้อง' THEN 1 ELSE 0 END) as dataIncorrect,
         SUM(CASE WHEN status_n = 'รอตรวจสอบ' THEN 1 ELSE 0 END) as pendingReview,
         COALESCE(SUM(paid_amount), 0) as paidAmount
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         pendingReview: summaryStmt.pendingReview || 0,
         pendingSend: 0,
         paidAmount: summaryStmt.paidAmount || 0,
-        outstandingAmount: (summaryStmt.outstanding || 0) * 100, // example logic
+        outstandingAmount: (summaryStmt.outstanding || 0) * 100,
       },
       approvalBreakdown: breakdownResult.results,
       topOutstanding: topResult.results,
