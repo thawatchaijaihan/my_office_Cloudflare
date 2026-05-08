@@ -156,51 +156,63 @@ export async function GET(request: NextRequest) {
        if (pTab) personnelSheetName = pTab.properties.title;
     }
 
-    // 4. Read Personnel Sheet
-    // Column B is index 1 (First Name)
-    // Column C is index 2 (Last Name)
-    // Column D is index 3 (Phone)
-    const personnelValues = await readSheetValues(token, personnelSheetId, `'${personnelSheetName}'!A:E`);
+    // 4. Read Personnel Sheet (A through F)
+    // Column B (1) = First Name, Column C (2) = Last Name
+    // Column D (3) = Phone, Column F (5) = Account Number
+    const personnelValues = await readSheetValues(token, personnelSheetId, `'${personnelSheetName}'!A:F`);
     
-    // 5. Find matches and prepare updates
+    // 5. Find matches and prepare updates for phones + protect account numbers
     const updates: { range: string, values: any[][] }[] = [];
-    let updatedCount = 0;
+    let updatedPhones = 0;
+    let protectedAccounts = 0;
 
     for (let i = 0; i < personnelValues.length; i++) {
       const r = personnelValues[i];
       const firstName = getCell(r, 1);
       const lastName = getCell(r, 2);
       const currentPhone = getCell(r, 3);
+      const currentAccount = getCell(r, 5); // Column F = เลขบัญชี
       
       if (!firstName || !lastName) continue;
+      const rowNum = i + 1;
 
+      // --- Phone update from pass requests ---
       const key = `${firstName} ${lastName}`;
       const newPhone = phoneMap.get(key);
-
-      // Check if currentPhone is essentially the same but missing the leading zero
-      // e.g., currentPhone is "812345678" and newPhone is "0812345678"
-      const currentClean = currentPhone.replace(/^'/, '').trim();
-      const needsUpdate = newPhone && (currentClean !== newPhone);
-
-      if (needsUpdate) {
-        // Row index is i + 1
-        const cellRange = `'${personnelSheetName}'!D${i + 1}`;
+      const currentPhoneClean = currentPhone.replace(/^'/, '').trim();
+      if (newPhone && currentPhoneClean !== newPhone) {
         updates.push({
-          range: cellRange,
+          range: `'${personnelSheetName}'!D${rowNum}`,
           values: [[`'${newPhone}`]]
         });
-        updatedCount++;
+        updatedPhones++;
+      }
+
+      // --- Protect account number leading zeros ---
+      // If account number is purely digits and doesn't already start with apostrophe,
+      // rewrite it with apostrophe prefix to force text format
+      if (currentAccount && /^\d+$/.test(currentAccount)) {
+        updates.push({
+          range: `'${personnelSheetName}'!F${rowNum}`,
+          values: [[`'${currentAccount}`]]
+        });
+        protectedAccounts++;
       }
     }
 
     if (updates.length > 0) {
-      await batchUpdateSheetValues(token, personnelSheetId, updates);
+      // Batch update in chunks of 100 to avoid API limits
+      for (let i = 0; i < updates.length; i += 100) {
+        const chunk = updates.slice(i, i + 100);
+        await batchUpdateSheetValues(token, personnelSheetId, chunk);
+      }
     }
 
     return NextResponse.json({ 
       status: "success", 
-      message: `Updated ${updatedCount} phone numbers in Personnel sheet based on Pass Requests.`,
-      updatedCount
+      message: `Updated ${updatedPhones} phone numbers, protected ${protectedAccounts} account numbers.`,
+      updatedPhones,
+      protectedAccounts
     });
 
   } catch (e: any) {
