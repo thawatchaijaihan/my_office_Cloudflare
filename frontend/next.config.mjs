@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    serverComponentsExternalPackages: ['async_hooks', 'node:async_hooks'],
+  },
   images: {
     remotePatterns: [
       {
