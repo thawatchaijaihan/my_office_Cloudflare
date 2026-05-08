@@ -174,7 +174,7 @@ async function syncPassRequests(db: any, token: string, spreadsheetId: string, i
     const statusN = getCell(r, 13);
     
     let paidAmount = 0;
-    if (statusM.includes('ชำระ') && !statusM.includes('ค้าง')) paidAmount = 100;
+    if (statusM.includes('ชำระ') && !statusM.includes('ค้าง')) paidAmount = 30;
 
     statements.push(
       db.prepare(`

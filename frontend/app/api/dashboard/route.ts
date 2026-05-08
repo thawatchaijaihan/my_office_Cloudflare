@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
         pendingReview: summaryStmt.pendingReview || 0,
         pendingSend: 0,
         paidAmount: summaryStmt.paidAmount || 0,
-        outstandingAmount: (summaryStmt.outstanding || 0) * 100,
+        outstandingAmount: (summaryStmt.outstanding || 0) * 30,
       },
       approvalBreakdown: breakdownResult.results,
       topOutstanding: topResult.results,
