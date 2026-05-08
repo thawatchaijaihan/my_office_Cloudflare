@@ -100,7 +100,7 @@ async function syncPersonnel(db: any, token: string, spreadsheetId: string) {
 
   await db.prepare("DELETE FROM personnel").run();
 
-  let count = 0;
+  const statements = [];
   for (let i = start; i < values.length; i++) {
     const r = values[i];
     const rank = getCell(r, 0);
@@ -109,22 +109,28 @@ async function syncPersonnel(db: any, token: string, spreadsheetId: string) {
 
     if (!rank && !firstName && !lastName) continue;
 
-    await db.prepare(`
-      INSERT INTO personnel (
-        rank, first_name, last_name, phone, bank, account_number,
-        citizen_id, military_id, duty, position, unit, birthplace,
-        birth_date, registered_date, enlistment_date, rank_date,
-        salary, age, retire_year, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-    `).bind(
-      rank, firstName, lastName, getCell(r, 3), getCell(r, 4), getCell(r, 5),
-      getCell(r, 6), getCell(r, 7), getCell(r, 8), getCell(r, 9), getCell(r, 10),
-      getCell(r, 11), getCell(r, 12), getCell(r, 13), getCell(r, 14), getCell(r, 15),
-      getCell(r, 16), getCell(r, 17), getCell(r, 18)
-    ).run();
-    count++;
+    statements.push(
+      db.prepare(`
+        INSERT INTO personnel (
+          rank, first_name, last_name, phone, bank, account_number,
+          citizen_id, military_id, duty, position, unit, birthplace,
+          birth_date, registered_date, enlistment_date, rank_date,
+          salary, age, retire_year, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+      `).bind(
+        rank, firstName, lastName, getCell(r, 3), getCell(r, 4), getCell(r, 5),
+        getCell(r, 6), getCell(r, 7), getCell(r, 8), getCell(r, 9), getCell(r, 10),
+        getCell(r, 11), getCell(r, 12), getCell(r, 13), getCell(r, 14), getCell(r, 15),
+        getCell(r, 16), getCell(r, 17), getCell(r, 18)
+      )
+    );
   }
-  return count;
+
+  for (let i = 0; i < statements.length; i += 100) {
+    await db.batch(statements.slice(i, i + 100));
+  }
+
+  return statements.length;
 }
 
 async function listSpreadsheetTabs(token: string, spreadsheetId: string) {
@@ -147,10 +153,9 @@ async function syncPassRequests(db: any, token: string, spreadsheetId: string, i
   const values = await readSheetValues(token, spreadsheetId, `'${sheetName}'!A2:P`);
   if (!values || values.length === 0) return 0;
 
-  // Clear existing to avoid duplicates
   await db.prepare("DELETE FROM pass_requests").run();
 
-  let count = 0;
+  const statements = [];
   for (let i = 0; i < values.length; i++) {
     const r = values[i];
     if (r.every((c: any) => !String(c ?? "").trim())) continue;
@@ -171,49 +176,43 @@ async function syncPassRequests(db: any, token: string, spreadsheetId: string, i
     let paidAmount = 0;
     if (statusM === 'ชำระแล้ว') paidAmount = 100;
 
-    await db.prepare(`
-      INSERT INTO pass_requests (
-        timestamp, rank, first_name, last_name, relation, phone,
-        vehicle_type, vehicle_model, vehicle_color, plate,
-        status_m, status_n, paid_amount, updated_at
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-    `).bind(
-      timestamp, rank, firstName, lastName, relation, phone,
-      vehicleType, vehicleModel, vehicleColor, plate,
-      statusM, statusN, paidAmount
-    ).run();
-    count++;
+    statements.push(
+      db.prepare(`
+        INSERT INTO pass_requests (
+          timestamp, rank, first_name, last_name, relation, phone,
+          vehicle_type, vehicle_model, vehicle_color, plate,
+          status_m, status_n, paid_amount, updated_at
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+      `).bind(
+        timestamp, rank, firstName, lastName, relation, phone,
+        vehicleType, vehicleModel, vehicleColor, plate,
+        statusM, statusN, paidAmount
+      )
+    );
   }
-  return count;
+
+  for (let i = 0; i < statements.length; i += 100) {
+    await db.batch(statements.slice(i, i + 100));
+  }
+
+  return statements.length;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const env = getRequestContext().env as any;
     if (!env.DB) return NextResponse.json({ error: "No DB" }, { status: 500 });
-    if (!env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64) return NextResponse.json({ error: "No GOOGLE_SERVICE_ACCOUNT_KEY_BASE64" }, { status: 500 });
+    const authKey = env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64;
+    if (!authKey) return NextResponse.json({ error: "No GOOGLE_SERVICE_ACCOUNT_KEY_BASE64" }, { status: 500 });
     if (!env.GOOGLE_SHEETS_ID) return NextResponse.json({ error: "No GOOGLE_SHEETS_ID" }, { status: 500 });
 
-    const serviceAccount = JSON.parse(atob(env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64));
+    const serviceAccount = JSON.parse(atob(authKey));
     const token = await getGoogleAccessToken(serviceAccount);
     
     let countPersonnel = 0;
     let personnelError = null;
-    let debugHeaders = null;
     try {
       const personnelSheetId = env.PERSONNEL_SHEET_ID || env.GOOGLE_SHEETS_ID_PERSONNEL || env.GOOGLE_SHEETS_ID;
-      
-      // Temporary debug logic
-      const serviceAccount = JSON.parse(atob(env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64));
-      const token = await getGoogleAccessToken(serviceAccount);
-      const tabs = await listSpreadsheetTabs(token, personnelSheetId);
-      const possibleNames = ["ข้อมูลกำลังพล", "รายชื่อกำลังพล", "กำลังพล", "Personnel", "personnel", "ชีต1", "Sheet1"];
-      let sheetName = tabs.find((t: any) => possibleNames.includes(t.properties.title))?.properties?.title;
-      if (!sheetName) sheetName = tabs.find((t: any) => t.properties.title.includes("กำลังพล"))?.properties?.title || "ข้อมูลกำลังพล";
-      
-      const values = await readSheetValues(token, personnelSheetId, `'${sheetName}'!A1:R5`);
-      debugHeaders = { sheetName, row1: values[0], row2: values[1], totalRows: values.length };
-
       countPersonnel = await syncPersonnel(env.DB, token, personnelSheetId);
     } catch (e: any) {
       personnelError = e.message;
@@ -231,12 +230,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       status: 'success', 
       message: `Synced ${countPersonnel} personnel records and ${countRequests} pass requests successfully`,
-      personnelError,
-      debugHeaders
+      personnelError
     });
   } catch (e: any) {
     console.error("[Sync API] Error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
-
