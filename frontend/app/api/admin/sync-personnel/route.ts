@@ -204,10 +204,12 @@ export async function POST(request: NextRequest) {
     const token = await getGoogleAccessToken(serviceAccount);
     
     let countPersonnel = 0;
+    let personnelError = null;
     try {
       const personnelSheetId = env.PERSONNEL_SHEET_ID || env.GOOGLE_SHEETS_ID_PERSONNEL || env.GOOGLE_SHEETS_ID;
       countPersonnel = await syncPersonnel(env.DB, token, personnelSheetId);
     } catch (e: any) {
+      personnelError = e.message;
       console.error("[Sync API] personnel sync failed:", e);
     }
 
@@ -221,7 +223,8 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ 
       status: 'success', 
-      message: `Synced ${countPersonnel} personnel records and ${countRequests} pass requests successfully` 
+      message: `Synced ${countPersonnel} personnel records and ${countRequests} pass requests successfully`,
+      personnelError,
     });
   } catch (e: any) {
     console.error("[Sync API] Error:", e);
