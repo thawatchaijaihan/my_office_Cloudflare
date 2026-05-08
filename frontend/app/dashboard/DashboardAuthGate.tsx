@@ -3,8 +3,9 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { DashboardAuthProvider, useDashboardAuth } from "./DashboardAuthContext";
+import { useDashboardAuth } from "./DashboardAuthContext";
 import DashboardNav from "./DashboardNav";
+import { useDashboardFetch } from "./useDashboardFetch";
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "บัตรผ่านยานพาหนะ",
@@ -23,7 +24,26 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const dashboardFetch = useDashboardFetch();
   const pageTitle = PAGE_TITLES[pathname] ?? "แดชบอร์ด";
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+
+  const handleSync = async () => {
+    if (isSyncing) return;
+    try {
+      setIsSyncing(true);
+      const res = await dashboardFetch("/api/admin/sync-personnel", { method: "POST" });
+      if (!res.ok) throw new Error("Sync failed");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     if (skipAuth) return;
@@ -61,6 +81,22 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               <div className="text-xs text-slate-400">Jaihan Assistant</div>
             </div>
           </Link>
+          {isSidebarOpen && (
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              title="ซิงค์ข้อมูลจาก Sheets"
+              className={`p-2 rounded-lg transition-all ${
+                isSyncing 
+                  ? "bg-slate-700 text-slate-500 cursor-not-allowed" 
+                  : "text-emerald-400 hover:bg-slate-700 hover:text-emerald-300"
+              }`}
+            >
+              <svg className={`w-5 h-5 ${isSyncing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          )}
         </div>
         <DashboardNav />
         <div className="shrink-0 border-t border-slate-700 p-3">
@@ -134,6 +170,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </>
         )}
       </main>
+
+      {/* Global Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 z-[100] animate-bounce">
+          <div className="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-xl text-sm font-medium border border-emerald-500 flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            </svg>
+            ซิงค์ข้อมูลสำเร็จ! ✨
+          </div>
+        </div>
+      )}
     </div>
   );
 }
