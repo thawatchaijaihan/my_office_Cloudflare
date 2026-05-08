@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN status_m = 'ชำระแล้ว' THEN 1 ELSE 0 END) as paid,
-        SUM(CASE WHEN status_m != 'ชำระแล้ว' THEN 1 ELSE 0 END) as outstanding,
+        SUM(CASE WHEN status_m LIKE '%ค้างชำระ%' THEN 1 ELSE 0 END) as outstanding,
         SUM(CASE WHEN status_n = 'ข้อมูลไม่ถูกต้อง' THEN 1 ELSE 0 END) as dataIncorrect,
         SUM(CASE WHEN status_n = 'รอตรวจสอบ' THEN 1 ELSE 0 END) as pendingReview,
         COALESCE(SUM(paid_amount), 0) as paidAmount
@@ -31,11 +31,11 @@ export async function GET(request: NextRequest) {
       GROUP BY status_n
     `).all();
 
-    // 3. Top Outstanding (Group by name, using pass_requests joining personnel or just grouping pass_requests)
+    // 3. Top Outstanding
     const topResult = await db.prepare(`
       SELECT first_name || ' ' || last_name as name, 'ค้างชำระ' as title, COUNT(*) as count
       FROM pass_requests
-      WHERE status_m != 'ชำระแล้ว'
+      WHERE status_m LIKE '%ค้างชำระ%'
       GROUP BY first_name, last_name
       ORDER BY count DESC
       LIMIT 10
