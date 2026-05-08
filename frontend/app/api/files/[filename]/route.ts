@@ -3,9 +3,9 @@ import { getRequestContext } from "@cloudflare/next-on-pages";
 
 export const runtime = "edge";
 
-export async function GET(request: NextRequest, { params }: { params: { filename: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ filename: string }> }) {
   try {
-    const filename = params.filename;
+    const { filename } = await context.params;
     const env = getRequestContext().env as any;
     if (!env.BUCKET) return new Response("No BUCKET", { status: 500 });
 
