@@ -125,6 +125,54 @@ async function syncPersonnel(db: any, token: string, spreadsheetId: string) {
   return count;
 }
 
+async function syncPassRequests(db: any, token: string, spreadsheetId: string) {
+  // Use index sheet name instead of GID for simplicity, or we can use the default "index" if it's named index
+  const values = await readSheetValues(token, spreadsheetId, "index!A2:P");
+  if (!values || values.length === 0) return 0;
+
+  // Clear existing to avoid duplicates
+  await db.prepare("DELETE FROM pass_requests").run();
+
+  let count = 0;
+  for (let i = 0; i < values.length; i++) {
+    const r = values[i];
+    if (r.every((c: any) => !String(c ?? "").trim())) continue;
+
+    const timestamp = getCell(r, 0);
+    const rank = getCell(r, 1);
+    const firstName = getCell(r, 2);
+    const lastName = getCell(r, 3);
+    const relation = getCell(r, 4);
+    const vehicleType = getCell(r, 6);
+    const vehicleModel = getCell(r, 7);
+    const vehicleColor = getCell(r, 8);
+    const plate = getCell(r, 9);
+    const phone = getCell(r, 10);
+    const statusM = getCell(r, 12);
+    const statusN = getCell(r, 13);
+    
+    // Parse paid amount if needed
+    let paidAmount = 0;
+    if (statusM === 'ชำระแล้ว') {
+      paidAmount = 100; // default assumption based on old code
+    }
+
+    await db.prepare(`
+      INSERT INTO pass_requests (
+        timestamp, rank, first_name, last_name, relation, phone,
+        vehicle_type, vehicle_model, vehicle_color, plate,
+        status_m, status_n, paid_amount, updated_at
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+    `).bind(
+      timestamp, rank, firstName, lastName, relation, phone,
+      vehicleType, vehicleModel, vehicleColor, plate,
+      statusM, statusN, paidAmount
+    ).run();
+    count++;
+  }
+  return count;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const env = getRequestContext().env as any;
@@ -134,14 +182,23 @@ export async function POST(request: NextRequest) {
 
     const serviceAccount = JSON.parse(atob(env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64));
     const token = await getGoogleAccessToken(serviceAccount);
-    const count = await syncPersonnel(env.DB, token, env.GOOGLE_SHEETS_ID);
+    
+    const countPersonnel = await syncPersonnel(env.DB, token, env.GOOGLE_SHEETS_ID);
+    let countRequests = 0;
+    try {
+      countRequests = await syncPassRequests(env.DB, token, env.GOOGLE_SHEETS_ID);
+    } catch (e: any) {
+      console.error("[Sync API] pass_requests sync failed, maybe sheet name is wrong:", e);
+      // We don't fail the whole request if pass_requests fails
+    }
     
     return NextResponse.json({ 
       status: 'success', 
-      message: `Synced ${count} personnel records successfully` 
+      message: `Synced ${countPersonnel} personnel records and ${countRequests} pass requests successfully` 
     });
   } catch (e: any) {
     console.error("[Sync API] Error:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
+
