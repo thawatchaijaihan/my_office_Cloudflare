@@ -129,10 +129,10 @@ export async function POST(request: NextRequest) {
   try {
     const env = getRequestContext().env as any;
     if (!env.DB) return NextResponse.json({ error: "No DB" }, { status: 500 });
-    if (!env.GOOGLE_SERVICE_ACCOUNT_JSON) return NextResponse.json({ error: "No GOOGLE_SERVICE_ACCOUNT_JSON" }, { status: 500 });
+    if (!env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64) return NextResponse.json({ error: "No GOOGLE_SERVICE_ACCOUNT_KEY_BASE64" }, { status: 500 });
     if (!env.GOOGLE_SHEETS_ID) return NextResponse.json({ error: "No GOOGLE_SHEETS_ID" }, { status: 500 });
 
-    const serviceAccount = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    const serviceAccount = JSON.parse(atob(env.GOOGLE_SERVICE_ACCOUNT_KEY_BASE64));
     const token = await getGoogleAccessToken(serviceAccount);
     const count = await syncPersonnel(env.DB, token, env.GOOGLE_SHEETS_ID);
     
