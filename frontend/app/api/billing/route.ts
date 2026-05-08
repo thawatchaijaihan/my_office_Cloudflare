@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const summary = await db.prepare(`
       SELECT 
         SUM(CASE WHEN status_m LIKE '%ชำระ%' AND status_m NOT LIKE '%ค้าง%' THEN paid_amount ELSE 0 END) as paidTotal,
-        SUM(CASE WHEN status_m LIKE '%ค้าง%' THEN 100 ELSE 0 END) as outstandingTotal
+        SUM(CASE WHEN status_m LIKE '%ค้าง%' THEN 30 ELSE 0 END) as outstandingTotal
       FROM pass_requests
     `).first();
 
