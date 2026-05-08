@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     // 4. Latest Entries
     const latestResult = await db.prepare(`
       SELECT id as rowNumber, timestamp as registeredAt, first_name || ' ' || last_name as name, 
-             request_for as requestFor, plate
+             relation as requestFor, plate
       FROM pass_requests
       ORDER BY timestamp DESC
       LIMIT 10
