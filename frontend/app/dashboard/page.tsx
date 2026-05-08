@@ -101,10 +101,10 @@ export default function DashboardPage() {
         setChartsAnimate(false);
         const key = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("key") ?? "" : "";
         const authHeaders = await getAuthHeaders();
-        const url = "https://api.capt-th.work/api/dashboard" + (key ? `?key=${encodeURIComponent(key)}` : "");
+        const url = "/api/dashboard" + (key ? `?key=${encodeURIComponent(key)}` : "");
         const [res, billingRes] = await Promise.all([
           fetch(url, { signal: controller.signal, headers: authHeaders }),
-          fetch("https://api.capt-th.work/api/billing", { signal: controller.signal }),
+          fetch("/api/billing", { signal: controller.signal }),
         ]);
 
         if (!res.ok) {

@@ -17,9 +17,7 @@ export function useDashboardFetch() {
           : "";
       const sep = path.includes("?") ? "&" : "?";
       
-      // Proxy all dashboard API calls to the backend worker
-      const baseUrl = path.startsWith("/api") ? "https://api.capt-th.work" : "";
-      const url = baseUrl + path + (key ? `${sep}key=${encodeURIComponent(key)}` : "");
+      const url = path + (key ? `${sep}key=${encodeURIComponent(key)}` : "");
       
       const authHeaders = await getAuthHeaders();
       const headers = { ...authHeaders, ...(options.headers as Record<string, string>) };

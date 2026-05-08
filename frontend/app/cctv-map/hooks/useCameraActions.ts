@@ -88,7 +88,7 @@ export function useCameraActions({
             };
 
             try {
-                const res = await fetch("https://api.capt-th.work/api/dashboard/cameras", {
+                const res = await fetch("/api/dashboard/cameras", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(newCamera),
@@ -139,7 +139,7 @@ export function useCameraActions({
         if (!confirmDelete) return;
         
         try {
-            const res = await fetch(`https://api.capt-th.work/api/dashboard/cameras?id=${camera.id}`, {
+            const res = await fetch(`/api/dashboard/cameras?id=${camera.id}`, {
                 method: "DELETE",
             });
             if (!res.ok) throw new Error("Delete failed");
@@ -166,7 +166,7 @@ export function useCameraActions({
             formData.append("cameraId", camera.id);
 
             const authHeaders = await getAuthHeaders();
-            const uploadRes = await fetch("https://api.capt-th.work/api/upload", {
+            const uploadRes = await fetch("/api/upload", {
                 method: "POST",
                 headers: { ...authHeaders },
                 body: formData,
