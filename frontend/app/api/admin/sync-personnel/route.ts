@@ -98,6 +98,8 @@ async function syncPersonnel(db: any, token: string, spreadsheetId: string) {
     if (first === 'ยศ' || first === 'rank') start = 1;
   }
 
+  await db.prepare("DELETE FROM personnel").run();
+
   let count = 0;
   for (let i = start; i < values.length; i++) {
     const r = values[i];
@@ -114,14 +116,6 @@ async function syncPersonnel(db: any, token: string, spreadsheetId: string) {
         birth_date, registered_date, enlistment_date, rank_date,
         salary, age, retire_year, updated_at
       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
-      ON CONFLICT(citizen_id) DO UPDATE SET
-        rank=excluded.rank, first_name=excluded.first_name, last_name=excluded.last_name,
-        phone=excluded.phone, bank=excluded.bank, account_number=excluded.account_number,
-        military_id=excluded.military_id, duty=excluded.duty, position=excluded.position,
-        unit=excluded.unit, birthplace=excluded.birthplace, birth_date=excluded.birth_date,
-        registered_date=excluded.registered_date, enlistment_date=excluded.enlistment_date,
-        rank_date=excluded.rank_date, salary=excluded.salary, age=excluded.age,
-        retire_year=excluded.retire_year, updated_at=excluded.updated_at
     `).bind(
       rank, firstName, lastName, getCell(r, 3), getCell(r, 4), getCell(r, 5),
       getCell(r, 6), getCell(r, 7), getCell(r, 8), getCell(r, 9), getCell(r, 10),
