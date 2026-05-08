@@ -1,10 +1,7 @@
 /**
  * เอกสาร/คู่มือสำหรับ RAG (ถาม-ตอบจากเอกสาร)
- * โหลดจากไฟล์ content/knowledge.md (หรือ path จาก RAG_KNOWLEDGE_PATH) ถ้ามี ไม่ต้อง deploy เพื่อแก้คู่มือ
+ * Edge Runtime ไม่มี filesystem — ใช้เนื้อหา inline เท่านั้น
  */
-import { readFile } from "fs/promises";
-import path from "path";
-import { config } from "./config";
 
 /** เนื้อหา fallback เมื่อไม่อ่านจากไฟล์ได้ */
 export const RAG_KNOWLEDGE_INLINE = `
@@ -50,30 +47,16 @@ let _cachedKnowledge: string | null = null;
 
 /**
  * ดึงเนื้อหาคู่มือสำหรับ RAG
- * - ถ้า RAG_KNOWLEDGE_PATH ว่างหรือ "inline" ใช้เนื้อหาใน code
- * - ถ้ามี path อ่านจากไฟล์ (เทียบกับ project root) และ cache ในหน่วยความจำ
+ * Edge Runtime: ใช้เนื้อหา inline เท่านั้น (ไม่มี filesystem)
  */
 export async function getKnowledge(): Promise<string> {
   if (_cachedKnowledge !== null) return _cachedKnowledge;
-
-  const rawPath = config.rag.knowledgePath.trim();
-  if (!rawPath || rawPath.toLowerCase() === "inline") {
-    _cachedKnowledge = RAG_KNOWLEDGE_INLINE;
-    return _cachedKnowledge;
-  }
-
-  try {
-    const fullPath = path.isAbsolute(rawPath) ? rawPath : path.join(process.cwd(), rawPath);
-    const content = await readFile(fullPath, "utf8");
-    _cachedKnowledge = content.trim() || RAG_KNOWLEDGE_INLINE;
-    return _cachedKnowledge;
-  } catch {
-    _cachedKnowledge = RAG_KNOWLEDGE_INLINE;
-    return _cachedKnowledge;
-  }
+  _cachedKnowledge = RAG_KNOWLEDGE_INLINE;
+  return _cachedKnowledge;
 }
 
 /** ล้าง cache (ใช้เมื่อต้องการให้โหลดไฟล์ใหม่ เช่นหลังอัปเดต content) */
 export function clearKnowledgeCache(): void {
   _cachedKnowledge = null;
 }
+
